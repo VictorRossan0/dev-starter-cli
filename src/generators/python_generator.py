@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from src.utils import ask_required, ask_yes_no, create_directory, create_files, print_created_structure
+from utils import ask_required, ask_yes_no, create_directory, create_files, print_created_structure
 
 
 PYTHON_PROJECTS = {
