@@ -1,4 +1,6 @@
 import json
+import shutil
+import subprocess
 import sys
 from pathlib import Path
 from typing import Iterable
@@ -87,3 +89,39 @@ def print_created_structure(base_path: Path, paths: Iterable[str]) -> None:
     print(base_path)
     for path in paths:
         print(f"  - {path}")
+
+
+def initialize_git_repository(project_path: Path) -> None:
+    """Initialize a Git repository and create the first commit."""
+    if shutil.which("git") is None:
+        print("Git não encontrado no PATH. Inicialização do repositório cancelada.")
+        return
+
+    if (project_path / ".git").exists():
+        print("Repositório Git já existe neste projeto.")
+        return
+
+    print("\nInicializando repositório Git...")
+
+    commands = [
+        ["git", "init"],
+        ["git", "add", "."],
+        ["git", "commit", "-m", "Initial commit"],
+    ]
+
+    for command in commands:
+        try:
+            subprocess.run(command, cwd=project_path, check=True)
+        except subprocess.CalledProcessError as error:
+            print(f"Erro ao executar comando: {' '.join(command)}")
+            print(error)
+
+            if command[:2] == ["git", "commit"]:
+                print("Verifique se seu Git possui user.name e user.email configurados.")
+                print("Exemplo:")
+                print('git config --global user.name "Seu Nome"')
+                print('git config --global user.email "seu-email@example.com"')
+
+            return
+
+    print("Repositório Git inicializado com commit inicial.")
