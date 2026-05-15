@@ -1,3 +1,6 @@
+import os
+import subprocess
+import sys
 from pathlib import Path
 
 from utils import ask_required, ask_yes_no, create_directory, create_files, print_created_structure
@@ -55,6 +58,71 @@ PYTHON_PROJECTS = {
 }
 
 
+def get_venv_python_path(project_path: Path) -> Path:
+    if os.name == "nt":
+        return project_path / ".venv" / "Scripts" / "python.exe"
+
+    return project_path / ".venv" / "bin" / "python"
+
+
+def create_virtual_environment(project_path: Path) -> bool:
+    print("\nCriando ambiente virtual .venv...")
+
+    try:
+        subprocess.run(
+            [sys.executable, "-m", "venv", str(project_path / ".venv")],
+            check=True,
+        )
+        print("Ambiente virtual criado com sucesso.")
+        return True
+    except subprocess.CalledProcessError as error:
+        print("Erro ao criar ambiente virtual.")
+        print(error)
+        return False
+
+
+def install_requirements(project_path: Path) -> None:
+    venv_python = get_venv_python_path(project_path)
+    requirements_path = project_path / "requirements.txt"
+
+    if not venv_python.exists():
+        print("Python da .venv não encontrado. Instalação cancelada.")
+        return
+
+    print("\nAtualizando pip...")
+    try:
+        subprocess.run(
+            [str(venv_python), "-m", "pip", "install", "--upgrade", "pip"],
+            check=True,
+        )
+    except subprocess.CalledProcessError as error:
+        print("Não foi possível atualizar o pip.")
+        print(error)
+
+    print("\nInstalando dependências do requirements.txt...")
+    try:
+        subprocess.run(
+            [str(venv_python), "-m", "pip", "install", "-r", str(requirements_path)],
+            check=True,
+        )
+        print("Dependências instaladas com sucesso.")
+    except subprocess.CalledProcessError as error:
+        print("Erro ao instalar dependências.")
+        print(error)
+
+
+def show_next_steps(project_path: Path) -> None:
+    print("\nPróximos passos:")
+    print(f"cd {project_path}")
+
+    if os.name == "nt":
+        print(r".venv\Scripts\activate")
+    else:
+        print("source .venv/bin/activate")
+
+    print("python run.py")
+
+
 def generate_python_project() -> None:
     print("\nTipos de projeto Python:")
     for key, project in PYTHON_PROJECTS.items():
@@ -88,3 +156,11 @@ def generate_python_project() -> None:
 
     print_created_structure(base_path, list(common_files.keys()) + list(project["files"].keys()))
     print("\nProjeto Python criado com sucesso!")
+
+    if ask_yes_no("Deseja criar ambiente virtual .venv?", default=True):
+        venv_created = create_virtual_environment(base_path)
+
+        if venv_created and ask_yes_no("Deseja instalar as dependências agora?", default=True):
+            install_requirements(base_path)
+
+        show_next_steps(base_path)
