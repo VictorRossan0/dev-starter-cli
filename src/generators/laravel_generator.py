@@ -1,15 +1,13 @@
 import shutil
 import subprocess
-from pathlib import Path
 
-from utils import ask_required
+from utils import ask_required, get_output_dir
 
 
 def generate_laravel_project() -> None:
     """Generate a Laravel project using Composer."""
     project_name = ask_required("Nome do projeto Laravel: ")
-    output_dir = Path.cwd() / "output"
-    output_dir.mkdir(parents=True, exist_ok=True)
+    output_dir = get_output_dir()
 
     if shutil.which("composer") is None:
         print("Composer não encontrado no PATH.")
