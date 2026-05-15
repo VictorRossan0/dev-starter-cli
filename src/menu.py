@@ -1,5 +1,5 @@
-from src.generators.laravel_generator import generate_laravel_project
-from src.generators.python_generator import generate_python_project
+from generators.laravel_generator import generate_laravel_project
+from generators.python_generator import generate_python_project
 
 
 def show_main_menu() -> None:
