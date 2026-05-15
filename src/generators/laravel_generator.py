@@ -2,7 +2,7 @@ import shutil
 import subprocess
 from pathlib import Path
 
-from src.utils import ask_required
+from utils import ask_required
 
 
 def generate_laravel_project() -> None:
