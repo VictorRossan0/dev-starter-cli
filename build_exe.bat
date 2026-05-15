@@ -26,7 +26,7 @@ if exist dist rmdir /s /q dist
 if exist dev-starter.spec del dev-starter.spec
 
 echo Gerando executavel...
-pyinstaller --onefile --name dev-starter dev_starter.py
+pyinstaller --onefile --name dev-starter --paths src --add-data "src;src" dev_starter.py
 
 echo.
 echo ============================
