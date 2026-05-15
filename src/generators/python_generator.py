@@ -3,7 +3,15 @@ import subprocess
 import sys
 from pathlib import Path
 
-from utils import ask_required, ask_yes_no, create_directory, create_files, get_output_dir, print_created_structure
+from utils import (
+    ask_required,
+    ask_yes_no,
+    create_directory,
+    create_files,
+    get_output_dir,
+    initialize_git_repository,
+    print_created_structure,
+)
 
 
 PYTHON_PROJECTS = {
@@ -209,6 +217,9 @@ def generate_python_project() -> None:
 
     print_created_structure(base_path, created_files)
     print("\nProjeto Python criado com sucesso!")
+
+    if ask_yes_no("Deseja inicializar um repositório Git neste projeto?", default=True):
+        initialize_git_repository(base_path)
 
     if ask_yes_no("Deseja criar ambiente virtual .venv?", default=True):
         venv_created = create_virtual_environment(base_path)
