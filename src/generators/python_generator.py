@@ -1,3 +1,4 @@
+import json
 import os
 import subprocess
 import sys
@@ -148,10 +149,11 @@ def install_requirements(project_path: Path) -> None:
 def get_docker_files(project: dict) -> dict[str, str]:
     run_command = project["run_command"]
     service_name = project["docker_service"]
+    command_json = json.dumps(run_command.split())
     port_block = "    ports:\n      - \"8000:8000\"\n" if service_name == "api" else ""
 
     return {
-        "Dockerfile": f"FROM python:3.12-slim\n\nWORKDIR /app\n\nENV PYTHONDONTWRITEBYTECODE=1\nENV PYTHONUNBUFFERED=1\n\nCOPY requirements.txt .\nRUN pip install --no-cache-dir -r requirements.txt\n\nCOPY . .\n\nCMD {run_command.split()}\n",
+        "Dockerfile": f"FROM python:3.12-slim\n\nWORKDIR /app\n\nENV PYTHONDONTWRITEBYTECODE=1\nENV PYTHONUNBUFFERED=1\n\nCOPY requirements.txt .\nRUN pip install --no-cache-dir -r requirements.txt\n\nCOPY . .\n\nCMD {command_json}\n",
         ".dockerignore": ".venv/\n__pycache__/\n*.pyc\n.env\n.git/\n.gitignore\nlogs/*.log\n",
         "docker-compose.yml": f"services:\n  {service_name}:\n    build: .\n    container_name: {service_name}_starter\n{port_block}    env_file:\n      - .env\n    volumes:\n      - .:/app\n",
     }
