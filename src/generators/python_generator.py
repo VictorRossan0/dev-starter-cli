@@ -55,6 +55,26 @@ PYTHON_PROJECTS = {
             "tests/__init__.py": "",
         },
     },
+    "4": {
+        "name": "Integração/API Worker",
+        "requirements": "python-dotenv\nrequests\nhttpx\npydantic\nloguru\n",
+        "files": {
+            "run.py": "from app.main import main\n\n\nif __name__ == '__main__':\n    main()\n",
+            "app/__init__.py": "",
+            "app/main.py": "from app.services.integration_service import IntegrationService\nfrom app.logs.logger import logger\n\n\ndef main():\n    logger.info('Worker de integração iniciado.')\n    service = IntegrationService()\n    result = service.execute()\n    logger.info(f'Resultado da execução: {result}')\n",
+            "app/config.py": "import os\nfrom pathlib import Path\nfrom dotenv import load_dotenv\n\nBASE_DIR = Path(__file__).resolve().parent.parent\nload_dotenv(BASE_DIR / '.env')\n\nAPP_ENV = os.getenv('APP_ENV', 'local')\nEXTERNAL_API_BASE_URL = os.getenv('EXTERNAL_API_BASE_URL', 'https://jsonplaceholder.typicode.com')\nEXTERNAL_API_TIMEOUT = float(os.getenv('EXTERNAL_API_TIMEOUT', '10'))\n",
+            "app/clients/__init__.py": "",
+            "app/clients/external_api_client.py": "import httpx\n\nfrom app.config import EXTERNAL_API_BASE_URL, EXTERNAL_API_TIMEOUT\nfrom app.logs.logger import logger\n\n\nclass ExternalApiClient:\n    def __init__(self):\n        self.base_url = EXTERNAL_API_BASE_URL.rstrip('/')\n        self.timeout = EXTERNAL_API_TIMEOUT\n\n    def get_health_sample(self) -> dict:\n        url = f'{self.base_url}/todos/1'\n        logger.info(f'Consultando API externa: {url}')\n\n        try:\n            response = httpx.get(url, timeout=self.timeout)\n            response.raise_for_status()\n            return response.json()\n        except httpx.HTTPError as error:\n            logger.error(f'Erro ao consultar API externa: {error}')\n            raise\n",
+            "app/services/__init__.py": "",
+            "app/services/integration_service.py": "from app.clients.external_api_client import ExternalApiClient\nfrom app.logs.logger import logger\n\n\nclass IntegrationService:\n    def __init__(self):\n        self.client = ExternalApiClient()\n\n    def execute(self) -> dict:\n        logger.info('Executando fluxo de integração.')\n        data = self.client.get_health_sample()\n\n        normalized_data = {\n            'external_id': data.get('id'),\n            'title': data.get('title'),\n            'completed': data.get('completed'),\n        }\n\n        logger.info(f'Dados normalizados: {normalized_data}')\n        return normalized_data\n",
+            "app/logs/__init__.py": "",
+            "app/logs/logger.py": "from pathlib import Path\nfrom loguru import logger\n\nLOGS_DIR = Path(__file__).resolve().parent.parent.parent / 'logs'\nLOGS_DIR.mkdir(parents=True, exist_ok=True)\n\nlogger.add(\n    LOGS_DIR / 'app.log',\n    rotation='1 MB',\n    retention='7 days',\n    level='INFO',\n    encoding='utf-8',\n)\n",
+            "app/utils/__init__.py": "",
+            "logs/.gitkeep": "",
+            "tests/__init__.py": "",
+            "tests/test_placeholder.py": "def test_placeholder():\n    assert True\n",
+        },
+    },
 }
 
 
@@ -144,9 +164,9 @@ def generate_python_project() -> None:
     create_directory(base_path)
 
     common_files = {
-        ".env": "APP_ENV=local\n",
-        ".env.example": "APP_ENV=local\n",
-        ".gitignore": ".env\n.venv/\n__pycache__/\n*.pyc\nlogs/\n",
+        ".env": "APP_ENV=local\nEXTERNAL_API_BASE_URL=https://jsonplaceholder.typicode.com\nEXTERNAL_API_TIMEOUT=10\n",
+        ".env.example": "APP_ENV=local\nEXTERNAL_API_BASE_URL=https://jsonplaceholder.typicode.com\nEXTERNAL_API_TIMEOUT=10\n",
+        ".gitignore": ".env\n.venv/\n__pycache__/\n*.pyc\nlogs/*.log\n",
         "requirements.txt": project["requirements"],
         "README.md": f"# {project_name}\n\nProjeto gerado com Dev Starter CLI.\n\nTipo: {project['name']}\n",
     }
