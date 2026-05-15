@@ -1,4 +1,4 @@
-from src.menu import show_main_menu
+from menu import show_main_menu
 
 
 if __name__ == "__main__":
