@@ -3,7 +3,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from utils import ask_required, ask_yes_no, create_directory, create_files, print_created_structure
+from utils import ask_required, ask_yes_no, create_directory, create_files, get_output_dir, print_created_structure
 
 
 PYTHON_PROJECTS = {
@@ -176,7 +176,7 @@ def generate_python_project() -> None:
         return
 
     project_name = ask_required("Nome do projeto: ")
-    base_path = Path.cwd() / "output" / project_name
+    base_path = get_output_dir() / project_name
 
     if base_path.exists() and not ask_yes_no("O projeto já existe. Deseja sobrescrever arquivos?", default=False):
         print("Operação cancelada.")
