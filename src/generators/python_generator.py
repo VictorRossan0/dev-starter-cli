@@ -9,6 +9,8 @@ from utils import ask_required, ask_yes_no, create_directory, create_files, prin
 PYTHON_PROJECTS = {
     "1": {
         "name": "Automação simples",
+        "run_command": "python run.py",
+        "docker_service": "worker",
         "requirements": "python-dotenv\nrequests\npydantic\n",
         "files": {
             "run.py": "from app.main import main\n\n\nif __name__ == '__main__':\n    main()\n",
@@ -21,6 +23,8 @@ PYTHON_PROJECTS = {
     },
     "2": {
         "name": "FastAPI",
+        "run_command": "uvicorn app.main:app --host 0.0.0.0 --port 8000",
+        "docker_service": "api",
         "requirements": "fastapi\nuvicorn[standard]\npython-dotenv\npydantic\nhttpx\nsqlalchemy\npsycopg2-binary\n",
         "files": {
             "run.py": "import uvicorn\n\n\nif __name__ == '__main__':\n    uvicorn.run('app.main:app', host='0.0.0.0', port=8000, reload=True)\n",
@@ -34,12 +38,12 @@ PYTHON_PROJECTS = {
             "app/schemas/__init__.py": "",
             "app/utils/__init__.py": "",
             "tests/__init__.py": "",
-            "Dockerfile": "FROM python:3.12-slim\n\nWORKDIR /app\nCOPY requirements.txt .\nRUN pip install --no-cache-dir -r requirements.txt\nCOPY . .\nCMD [\"uvicorn\", \"app.main:app\", \"--host\", \"0.0.0.0\", \"--port\", \"8000\"]\n",
-            "docker-compose.yml": "services:\n  api:\n    build: .\n    ports:\n      - \"8000:8000\"\n    env_file:\n      - .env\n",
         },
     },
     "3": {
         "name": "Scraping",
+        "run_command": "python run.py",
+        "docker_service": "scraper",
         "requirements": "python-dotenv\nrequests\nbeautifulsoup4\nplaywright\npandas\n",
         "files": {
             "run.py": "from app.main import main\n\n\nif __name__ == '__main__':\n    main()\n",
@@ -57,6 +61,8 @@ PYTHON_PROJECTS = {
     },
     "4": {
         "name": "Integração/API Worker",
+        "run_command": "python run.py",
+        "docker_service": "worker",
         "requirements": "python-dotenv\nrequests\nhttpx\npydantic\nloguru\n",
         "files": {
             "run.py": "from app.main import main\n\n\nif __name__ == '__main__':\n    main()\n",
@@ -131,7 +137,19 @@ def install_requirements(project_path: Path) -> None:
         print(error)
 
 
-def show_next_steps(project_path: Path) -> None:
+def get_docker_files(project: dict) -> dict[str, str]:
+    run_command = project["run_command"]
+    service_name = project["docker_service"]
+    port_block = "    ports:\n      - \"8000:8000\"\n" if service_name == "api" else ""
+
+    return {
+        "Dockerfile": f"FROM python:3.12-slim\n\nWORKDIR /app\n\nENV PYTHONDONTWRITEBYTECODE=1\nENV PYTHONUNBUFFERED=1\n\nCOPY requirements.txt .\nRUN pip install --no-cache-dir -r requirements.txt\n\nCOPY . .\n\nCMD {run_command.split()}\n",
+        ".dockerignore": ".venv/\n__pycache__/\n*.pyc\n.env\n.git/\n.gitignore\nlogs/*.log\n",
+        "docker-compose.yml": f"services:\n  {service_name}:\n    build: .\n    container_name: {service_name}_starter\n{port_block}    env_file:\n      - .env\n    volumes:\n      - .:/app\n",
+    }
+
+
+def show_next_steps(project_path: Path, docker_enabled: bool = False) -> None:
     print("\nPróximos passos:")
     print(f"cd {project_path}")
 
@@ -141,6 +159,10 @@ def show_next_steps(project_path: Path) -> None:
         print("source .venv/bin/activate")
 
     print("python run.py")
+
+    if docker_enabled:
+        print("\nCom Docker:")
+        print("docker compose up --build")
 
 
 def generate_python_project() -> None:
@@ -174,7 +196,18 @@ def generate_python_project() -> None:
     create_files(base_path, common_files)
     create_files(base_path, project["files"])
 
-    print_created_structure(base_path, list(common_files.keys()) + list(project["files"].keys()))
+    default_docker = option in {"2", "4"}
+    docker_enabled = ask_yes_no("Deseja adicionar Docker ao projeto?", default=default_docker)
+    if docker_enabled:
+        docker_files = get_docker_files(project)
+        create_files(base_path, docker_files)
+        print("\nArquivos Docker adicionados ao projeto.")
+
+    created_files = list(common_files.keys()) + list(project["files"].keys())
+    if docker_enabled:
+        created_files += list(get_docker_files(project).keys())
+
+    print_created_structure(base_path, created_files)
     print("\nProjeto Python criado com sucesso!")
 
     if ask_yes_no("Deseja criar ambiente virtual .venv?", default=True):
@@ -183,4 +216,4 @@ def generate_python_project() -> None:
         if venv_created and ask_yes_no("Deseja instalar as dependências agora?", default=True):
             install_requirements(base_path)
 
-        show_next_steps(base_path)
+        show_next_steps(base_path, docker_enabled=docker_enabled)
