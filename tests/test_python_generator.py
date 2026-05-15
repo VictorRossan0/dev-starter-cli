@@ -1,4 +1,4 @@
-import python_generator
+from generators import python_generator
 
 
 def test_get_docker_files_for_fastapi_contains_expected_files():
