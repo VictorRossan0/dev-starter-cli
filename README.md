@@ -304,6 +304,6 @@ Este projeto demonstra práticas aplicadas de:
 
 ## Autor
 
-**Victor Rossano**
+Victor Rossano
 
 Desenvolvedor com foco em backend, automação, integrações, Python, Laravel e soluções orientadas a produtividade.
